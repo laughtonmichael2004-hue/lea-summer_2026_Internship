@@ -45,7 +45,7 @@ num_files = 0
 averaging = False
 # Define the directory path where the spectrum data files are located. Use pathlib to handle file paths.
 
-path = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\3. Stability\Stability_Data_(29-10-2026)")  # Replace with the actual path to your data files
+path = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_Hole_Pos_Test_(29-10-2026)")  # Replace with the actual path to your data files
 path_prefix = path
 path_suffix = ".txt"
 
