@@ -10,8 +10,6 @@ What the program does, in order:
   3. Fits the angle -> wavelength conversion (gamma, theta0) so that the
      PDE-corrected data matches the reference spectrum.
        - default mode : gamma and theta0 both free (L-BFGS-B fit)
-       - --fix-gamma  : gamma fixed to 1.0, only theta0 is fitted
-                        (scan, then fine bounded minimisation)
   4. Applies the final wavelength conversion, PDE correction and normalisation.
   5. Plots the calibrated data against the reference (optionally saves it).
 
@@ -21,7 +19,7 @@ Expected input file columns:
 Usage examples:
     python calibrate_A.py "path/to/spectrum_folder"
     python calibrate_A.py "path/to/single_spectrum.txt"
-    python calibrate_A.py "path/to/spectrum_folder" --fix-gamma
+    python calibrate_A.py "path/to/spectrum_folder" --init_guess 1.00694 1.0
     python calibrate_A.py "path/to/spectrum_folder" --save out.png --no-show
 """
 
@@ -39,6 +37,9 @@ from scipy.optimize import minimize, minimize_scalar
 
 # Path used when none is given on the command line (a file or a folder). Edit this.
 DEFAULT_DATA_DIR = r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(30-10-2026)_1"
+
+# Default initial guesses for the fit parameters (gamma, theta0). These are used in the
+DEFAULT_GUESS = [1.00694, 0.5] 
 
 # Physical constants for the wavelength conversion (Eq. 20 of Max's report).
 # These were globals set inside get_wavelength() in the original code.
@@ -187,7 +188,7 @@ def pde_at(wavelength):
 # STEP 3a: FREE FIT OF gamma AND theta0
 # ---------------------------------------------------------------------------
 
-def fit_gamma_and_theta0(angle, photocurrent_avg):
+def fit_gamma_and_theta0(angle, photocurrent_avg, init_guess=None):
     """Fit gamma and theta0 together by minimising the residual sum of squares."""
 
     def objective_function(params):
@@ -212,7 +213,7 @@ def fit_gamma_and_theta0(angle, photocurrent_avg):
         # Minimise residual sum of squares
         return np.sum((y_fit_scaled - y_ref_lookup) ** 2)
 
-    init_guess = [1.00694, 1.0]          # gamma and theta0
+    #init_guess = [1.00694, 1.0]          # gamma and theta0
     bounds = [(0.9, 1.1), (-2.0, 2.0)]   # allowed ranges (theta0 in degrees)
     result = minimize(objective_function, init_guess, bounds=bounds, method='L-BFGS-B')
     gamma_opt, theta0_opt = result.x
@@ -223,42 +224,6 @@ def fit_gamma_and_theta0(angle, photocurrent_avg):
 # STEP 3b: FIXED gamma, FIT ONLY theta0  (the previously commented-out block)
 # ---------------------------------------------------------------------------
 
-def fit_theta0_fixed_gamma(angle, photocurrent_avg, gamma=1.0, show_scan=True):
-    """Fix gamma, scan theta0 for a starting point, then refine it."""
-
-    # Fixed mask in angle space: choose the points whose uncalibrated wavelength
-    # lies in 110-170 nm, so the same points are used for every theta0 trial.
-    w_ref_cal = get_wavelength(angle, 1.0, 0.0)
-    idx = np.where((w_ref_cal >= 110) & (w_ref_cal <= 170))[0]
-    ang_fit = angle[idx]
-    pc_fit = photocurrent_avg[idx]
-
-    def objective_theta(theta0):
-        w = get_wavelength(ang_fit, gamma, theta0)
-        y = pc_fit / pde_at(w)               # PDE-corrected data
-        r = np.interp(w, X_REF, Y_REF)       # reference at the same wavelengths
-        a = np.sum(y * r) / np.sum(y ** 2)   # analytic best-fit amplitude
-        return np.mean((a * y - r) ** 2)     # mean (not sum) over fixed points
-
-    # Coarse scan over theta0 to find a good starting point.
-    # Range restricted to +/-0.5 deg as theta is expected to be near 0.
-    thetas = np.linspace(-0.5, 0.5, 1501)
-    costs = np.array([objective_theta(t) for t in thetas])
-    t_best = thetas[np.argmin(costs)]
-    print("Best theta0 from scan:", t_best)
-
-    if show_scan:
-        plt.figure()
-        plt.plot(thetas, costs)
-        plt.axvline(t_best, color='r')
-        plt.xlabel('theta0 (deg)')
-        plt.ylabel('cost')
-        plt.show()
-
-    # Refine with a bounded 1-D minimisation around the scan minimum
-    res = minimize_scalar(objective_theta, bounds=(t_best - 0.02, t_best + 0.02),
-                          method='bounded', options={'xatol': 1e-7})
-    return gamma, res.x, (110, 170)  # also return the normalisation window
 
 
 # ---------------------------------------------------------------------------
@@ -353,8 +318,8 @@ def main():
     parser.add_argument("data_path", nargs="*", default=None,
                         help="A single spectrum .txt file, or a directory of .txt files "
                              "to average (optional: falls back to DEFAULT_DATA_DIR)")
-    parser.add_argument("--fix-gamma", action="store_true",
-                        help="Fix gamma = 1.0 and only fit theta0 (instead of fitting both)")
+    parser.add_argument("--init_guess", nargs=2, type=float, default=DEFAULT_GUESS,
+                        help="Initial guesses for gamma and theta0")
     parser.add_argument("--save", type=Path, default=None,
                         help="Save the final figure to this path (e.g. result.png)")
     parser.add_argument("--no-show", action="store_true",
@@ -379,11 +344,8 @@ def main():
     angle, photocurrent_avg, photocurrent_std = load_and_average(data_path)
 
     # 3. Fit the calibration parameters
-    if args.fix_gamma:
-        gamma_opt, theta0_opt, norm_window = fit_theta0_fixed_gamma(
-            angle, photocurrent_avg, gamma=1.0, show_scan=not args.no_show)
-    else:
-        gamma_opt, theta0_opt, norm_window = fit_gamma_and_theta0(angle, photocurrent_avg)
+
+    gamma_opt, theta0_opt, norm_window = fit_gamma_and_theta0(angle, photocurrent_avg, init_guess=args.init_guess)
     print(f"gamma = {gamma_opt:.5f}, theta0 = {theta0_opt:.5f} deg")
 
     # 4. Apply the calibration and normalise
