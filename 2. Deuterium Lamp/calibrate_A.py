@@ -3,8 +3,10 @@
 Calibration A - calibrate monochromator angle data to a reference spectrum.
 
 What the program does, in order:
-  1. Reads every .txt (CSV-formatted) spectrum file in a directory.
-  2. Averages the photocurrent over all files and combines their errors.
+  1. Reads either a single spectrum file, or every .txt (CSV-formatted)
+     spectrum file in a directory.
+  2. If a directory was given, averages the photocurrent over all files and
+     combines their errors.
   3. Fits the angle -> wavelength conversion (gamma, theta0) so that the
      PDE-corrected data matches the reference spectrum.
        - default mode : gamma and theta0 both free (L-BFGS-B fit)
@@ -18,6 +20,7 @@ Expected input file columns:
 
 Usage examples:
     python calibrate_A.py "path/to/spectrum_folder"
+    python calibrate_A.py "path/to/single_spectrum.txt"
     python calibrate_A.py "path/to/spectrum_folder" --fix-gamma
     python calibrate_A.py "path/to/spectrum_folder" --save out.png --no-show
 """
@@ -34,7 +37,7 @@ from scipy.optimize import minimize, minimize_scalar
 # CONSTANTS AND REFERENCE DATA
 # ---------------------------------------------------------------------------
 
-# Folder used when no directory is given on the command line. Edit this.
+# Path used when none is given on the command line (a file or a folder). Edit this.
 DEFAULT_DATA_DIR = r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(30-10-2026)_1"
 
 # Physical constants for the wavelength conversion (Eq. 20 of Max's report).
@@ -80,7 +83,7 @@ VALS_PDE = np.array([11, 12.5, 15.0, 19.0, 22.0, 24, 23.5, 23, 17, 23.5, 23.5, 2
 
 
 # ---------------------------------------------------------------------------
-# STEP 1 & 2: LOAD AND AVERAGE THE DATA FILES
+# STEP 1 & 2: LOAD (AND AVERAGE) THE DATA
 # ---------------------------------------------------------------------------
 
 def load_single_file(file_path: Path):
@@ -96,27 +99,32 @@ def load_single_file(file_path: Path):
     photocurrent_std = (df["current_std_A"] / np.sqrt(df["n_samples"])).to_numpy()
     return angle, photocurrent, photocurrent_std
 
+
 def load_and_average(path: Path):
     """
-    Read every .txt file in `path` and average them together.
+    Load spectrum data from `path`, which can be either:
+      - a single file: its data is returned as-is, or
+      - a directory: every .txt file in it is read and averaged together.
 
     Returns (angle, photocurrent_avg, photocurrent_std) as numpy arrays.
-    The per-file errors (std / sqrt(n_samples)) are combined as variances and
-    the std of the average is sqrt(total_variance / num_files), as in the
-    original code.
+    For a directory, the per-file errors (std / sqrt(n_samples)) are combined
+    as variances and the std of the average is sqrt(total_variance / num_files).
+    For a single file, the std returned is that file's standard error.
     """
-    total_sum_photocurrent = None   # running sum of photocurrent over files
-    total_sum_variance = None       # running sum of variances over files
-    reference_angle = None          # angle array of the first good file
-    num_files = 0                   # how many files were processed successfully
+    print(path)
 
+    # --- Single file case: nothing to average ---
     if path.is_file():
-        # Single file case
         print(f"Processing single file: {path}")
-        angle, photocurrent, photocurrent_std = load_single_file(path)
-        return angle, photocurrent, photocurrent_std
+        return load_single_file(path)
 
+    # --- Directory case: average all .txt files ---
     elif path.is_dir():
+        total_sum_photocurrent = None   # running sum of photocurrent over files
+        total_sum_variance = None       # running sum of variances over files
+        reference_angle = None          # angle array of the first good file
+        num_files = 0                   # how many files were processed successfully
+
         for target in sorted(path.glob("*.txt")):
             print(target)
 
@@ -155,8 +163,10 @@ def load_and_average(path: Path):
         photocurrent_std = np.sqrt(total_sum_variance / num_files)
         print(f"Averaged {num_files} file(s).")
         return reference_angle, photocurrent_avg, photocurrent_std
+
     else:
         raise ValueError(f"Path is neither a file nor a directory: {path}")
+
 
 # ---------------------------------------------------------------------------
 # PHYSICS HELPERS
@@ -340,9 +350,9 @@ def plot_result(wavelength_final, photocurrent_normalise, gamma_opt, theta0_opt,
 def main():
     parser = argparse.ArgumentParser(
         description="Calibrate spectrum data (angle -> wavelength, PDE-corrected) to a reference spectrum.")
-    parser.add_argument("data_dir", nargs="*", default=None,
-                        help="Directory containing the spectrum .txt files "
-                             "(optional: falls back to DEFAULT_DATA_DIR)")
+    parser.add_argument("data_path", nargs="*", default=None,
+                        help="A single spectrum .txt file, or a directory of .txt files "
+                             "to average (optional: falls back to DEFAULT_DATA_DIR)")
     parser.add_argument("--fix-gamma", action="store_true",
                         help="Fix gamma = 1.0 and only fit theta0 (instead of fitting both)")
     parser.add_argument("--save", type=Path, default=None,
@@ -351,20 +361,22 @@ def main():
                         help="Do not open plot windows (useful when saving only)")
     args = parser.parse_args()
 
-    # Build the directory path. Joining the pieces handles unquoted paths with
-    # spaces, and stripping quotes handles the Windows trailing-backslash issue
+    # Build the path. Joining the pieces handles unquoted paths with spaces,
+    # and stripping quotes handles the Windows trailing-backslash issue
     # ("C:\\folder\\" arrives with a stray quote on the end).
-    if args.data_dir:
-        raw = " ".join(args.data_dir).strip().strip('"').strip("'")
-        data_dir = Path(raw)
+    if args.data_path:
+        raw = " ".join(args.data_path).strip().strip('"').strip("'")
+        print(raw)
+        data_path = Path(raw)
     else:
-        data_dir = Path(DEFAULT_DATA_DIR)
+        data_path = Path(DEFAULT_DATA_DIR)
 
-    if not data_dir.is_dir():
-        parser.error(f"Not a directory: {data_dir!r}  (check the path and quotes)")
+    # Accept either a file or a folder (load_and_average handles both cases)
+    if not data_path.exists():
+        parser.error(f"Path not found: {data_path!r}  (check the path and quotes)")
 
-    # 1-2. Load and average all spectrum files
-    angle, photocurrent_avg, photocurrent_std = load_and_average(data_dir)
+    # 1-2. Load the data (and average if a directory was given)
+    angle, photocurrent_avg, photocurrent_std = load_and_average(data_path)
 
     # 3. Fit the calibration parameters
     if args.fix_gamma:
