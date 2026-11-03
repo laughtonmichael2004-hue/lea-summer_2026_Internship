@@ -20,7 +20,7 @@ Usage examples:
     python calibrate_A.py "path/to/spectrum_folder"
     python calibrate_A.py "path/to/single_spectrum.txt"
     python calibrate_A.py "path/to/spectrum_folder" --init_guess 1.00694 1.0
-    python calibrate_A.py "path/to/spectrum_folder" --save out.png --no-show
+    python calibrate_A.py "path/to/spectrum_folder" --save "out.png" --no-show
 """
 
 import argparse
