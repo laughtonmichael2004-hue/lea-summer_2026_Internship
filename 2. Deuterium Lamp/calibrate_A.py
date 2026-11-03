@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Calibration A - calibrate monochromator angle data to a reference spectrum.
 
