@@ -1,0 +1,2 @@
+angle_deg,epos,current_mean_A,current_std_A,n_samples
+7.8,7.797500000000001,6.419439420000001e-05,2.0091565992813985e-07,100

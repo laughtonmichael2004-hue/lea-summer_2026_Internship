@@ -1,0 +1,2 @@
+wavelength_nm,photocurrent_avg_A,photocurrent_std_A
+160.78121015815933,6.365141872000002e-05,1.7500203899831548e-08
