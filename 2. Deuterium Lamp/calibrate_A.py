@@ -83,6 +83,19 @@ VALS_PDE = np.array([11, 12.5, 15.0, 19.0, 22.0, 24, 23.5, 23, 17, 23.5, 23.5, 2
 # STEP 1 & 2: LOAD AND AVERAGE THE DATA FILES
 # ---------------------------------------------------------------------------
 
+def load_single_file(file_path: Path):
+    """
+    Load a single .txt file and return the angle, photocurrent, and std arrays.
+    Raises an exception if the file cannot be read or lacks required columns.
+    """
+    df = pd.read_csv(file_path)
+    # Assumed format: angle_deg, epos, current_mean_A, current_std_A, n_samples
+    angle = df["angle_deg"].to_numpy()
+    photocurrent = df["current_mean_A"].to_numpy()
+    # Standard error of the mean for this file (errors are negligible)
+    photocurrent_std = (df["current_std_A"] / np.sqrt(df["n_samples"])).to_numpy()
+    return angle, photocurrent, photocurrent_std
+
 def load_and_average(path: Path):
     """
     Read every .txt file in `path` and average them together.
@@ -96,49 +109,55 @@ def load_and_average(path: Path):
     total_sum_variance = None       # running sum of variances over files
     reference_angle = None          # angle array of the first good file
     num_files = 0                   # how many files were processed successfully
-
-    for target in sorted(path.glob("*.txt")):
+    
+    if len(path.glob("*.txt")) == 1:
+        # If there is a single .txt file, we want to process it only using the load_single_file function. Avoids unnecessary averaging.
+        target = list(path.glob("*.txt"))[0]
         print(target)
-
-        # Try to read the file; skip it if it cannot be read or lacks columns
         try:
-            df = pd.read_csv(target)
-            # Assumed format: angle_deg, epos, current_mean_A, current_std_A, n_samples
-            angle = df["angle_deg"].to_numpy()
-            photocurrent = df["current_mean_A"].to_numpy()
-            # Standard error of the mean for this file (errors are negligible)
-            photocurrent_std = (df["current_std_A"] / np.sqrt(df["n_samples"])).to_numpy()
+            angle, photocurrent, photocurrent_std = load_single_file(target)
         except Exception as e:
-            print(f"File {target} failed to load/process: {e}")
-            continue
-        print("file read successfully")
+            raise ValueError(f"File {target} failed to load/process: {e}")
 
-        if total_sum_photocurrent is None:
-            # First good file: start the running sums
-            total_sum_photocurrent = photocurrent.copy()
-            total_sum_variance = photocurrent_std ** 2
-            reference_angle = angle
-        else:
-            # The files are assumed to share the same angle range. Warn if not,
-            # since adding arrays of different angles would be wrong.
-            if len(angle) != len(reference_angle) or not np.array_equal(reference_angle, angle):
-                print(f"Warning: Angle arrays do not match for file {target}.")
-                if len(angle) != len(reference_angle):
-                    print(f"  Skipping {target} (different number of points).")
-                    continue
-            total_sum_photocurrent += photocurrent
-            # Combine variances so the std of the average can be found later
-            total_sum_variance += photocurrent_std ** 2
+    else:
+        for target in sorted(path.glob("*.txt")):
+            print(target)
 
-        num_files += 1
+            # Try to read the file; skip it if it cannot be read or lacks columns
+            try:
+                angle, photocurrent, photocurrent_std = load_single_file(target)
+            except Exception as e:
+                print(f"File {target} failed to load/process: {e}")
+                continue
 
-    if num_files == 0:
-        raise ValueError(f"No usable .txt files found in directory: {path}")
+            print("file read successfully")
 
-    photocurrent_avg = total_sum_photocurrent / num_files
-    photocurrent_std = np.sqrt(total_sum_variance / num_files)
-    print(f"Averaged {num_files} file(s).")
-    return reference_angle, photocurrent_avg, photocurrent_std
+            if total_sum_photocurrent is None:
+                # First good file: start the running sums
+                total_sum_photocurrent = photocurrent.copy()
+                total_sum_variance = photocurrent_std ** 2
+                reference_angle = angle
+            else:
+                # The files are assumed to share the same angle range. Warn if not,
+                # since adding arrays of different angles would be wrong.
+                if len(angle) != len(reference_angle) or not np.array_equal(reference_angle, angle):
+                    print(f"Warning: Angle arrays do not match for file {target}.")
+                    if len(angle) != len(reference_angle):
+                        print(f"  Skipping {target} (different number of points).")
+                        continue
+                total_sum_photocurrent += photocurrent
+                # Combine variances so the std of the average can be found later
+                total_sum_variance += photocurrent_std ** 2
+
+            num_files += 1
+
+        if num_files == 0:
+            raise ValueError(f"No usable .txt files found in directory: {path}")
+
+        photocurrent_avg = total_sum_photocurrent / num_files
+        photocurrent_std = np.sqrt(total_sum_variance / num_files)
+        print(f"Averaged {num_files} file(s).")
+        return reference_angle, photocurrent_avg, photocurrent_std
 
 
 # ---------------------------------------------------------------------------
