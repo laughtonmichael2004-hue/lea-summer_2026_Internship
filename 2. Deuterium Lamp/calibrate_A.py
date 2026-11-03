@@ -17,9 +17,9 @@ Expected input file columns:
     angle_deg, epos, current_mean_A, current_std_A, n_samples
 
 Usage examples:
-    python calibrate.py "path/to/spectrum_folder"
-    python calibrate.py "path/to/spectrum_folder" --fix-gamma
-    python calibrate.py "path/to/spectrum_folder" --save out.png --no-show
+    python calibrate_A.py "path/to/spectrum_folder"
+    python calibrate_A.py "path/to/spectrum_folder" --fix-gamma
+    python calibrate_A.py "path/to/spectrum_folder" --save out.png --no-show
 """
 
 import argparse
