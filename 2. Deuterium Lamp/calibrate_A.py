@@ -184,7 +184,7 @@ def pde_at(wavelength):
 
 
 # ---------------------------------------------------------------------------
-# STEP 3a: FREE FIT OF gamma AND theta0
+# STEP 3: FREE FIT OF gamma AND theta0
 # ---------------------------------------------------------------------------
 
 def fit_gamma_and_theta0(angle, photocurrent_avg, init_guess=None):
@@ -217,12 +217,6 @@ def fit_gamma_and_theta0(angle, photocurrent_avg, init_guess=None):
     result = minimize(objective_function, init_guess, bounds=bounds, method='L-BFGS-B')
     gamma_opt, theta0_opt = result.x
     return gamma_opt, theta0_opt, (115, 200)  # also return the normalisation window
-
-
-# ---------------------------------------------------------------------------
-# STEP 3b: FIXED gamma, FIT ONLY theta0  (the previously commented-out block)
-# ---------------------------------------------------------------------------
-
 
 
 # ---------------------------------------------------------------------------
