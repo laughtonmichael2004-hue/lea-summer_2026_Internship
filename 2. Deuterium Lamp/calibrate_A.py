@@ -109,17 +109,14 @@ def load_and_average(path: Path):
     total_sum_variance = None       # running sum of variances over files
     reference_angle = None          # angle array of the first good file
     num_files = 0                   # how many files were processed successfully
-    
-    if len(path.glob("*.txt")) == 1:
-        # If there is a single .txt file, we want to process it only using the load_single_file function. Avoids unnecessary averaging.
-        target = list(path.glob("*.txt"))[0]
-        print(target)
-        try:
-            angle, photocurrent, photocurrent_std = load_single_file(target)
-        except Exception as e:
-            raise ValueError(f"File {target} failed to load/process: {e}")
 
-    else:
+    if path.is_file():
+        # Single file case
+        print(f"Processing single file: {path}")
+        angle, photocurrent, photocurrent_std = load_single_file(path)
+        return angle, photocurrent, photocurrent_std
+
+    elif path.is_dir():
         for target in sorted(path.glob("*.txt")):
             print(target)
 
@@ -158,7 +155,8 @@ def load_and_average(path: Path):
         photocurrent_std = np.sqrt(total_sum_variance / num_files)
         print(f"Averaged {num_files} file(s).")
         return reference_angle, photocurrent_avg, photocurrent_std
-
+    else:
+        raise ValueError(f"Path is neither a file nor a directory: {path}")
 
 # ---------------------------------------------------------------------------
 # PHYSICS HELPERS
