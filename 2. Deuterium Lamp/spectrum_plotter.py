@@ -19,8 +19,10 @@ def actuator_angle_to_wavelength(theta_deg):
 
     d = 835.5           # nm (1 / 1200 lines/mm)
     phi = 35            # degrees (half deviation angle)
-    gamma = 1.00694     # NEW actuator scaling factor, Max's : 1.0028
-    theta0 = -1.02898   # NEW degrees (angular offset), max's : 1.502
+    #gamma = 1.00694     # NEW actuator scaling factor, Max's : 1.0028
+    #theta0 = -1.02898   # NEW degrees (angular offset), max's : 1.502
+    gamma = 0.99360 # New New
+    theta0 = 1.01126 # New New degrees
     m = 1               # first diffraction order
 
     theta_rad = np.radians(theta_deg)
@@ -45,7 +47,7 @@ num_files = 0
 averaging = False
 # Define the directory path where the spectrum data files are located. Use pathlib to handle file paths.
 
-path = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_Hole_Pos_Test_(29-10-2026)")  # Replace with the actual path to your data files
+path = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(02_11_2026)\selected_angles_first_pos\plus_minus_first_pos")  # Replace with the actual path to your data files
 path_prefix = path
 path_suffix = ".txt"
 
@@ -122,7 +124,7 @@ ax2.legend()
 plt.tight_layout()
 
 if save_fig:
-    plt.savefig("spectrum_hole_pos_test.png", dpi=600, bbox_inches='tight')
+    plt.savefig("selected_angles_first_pos_plus_minus_(02-11-2026).png", dpi=600, bbox_inches='tight')
 
 plt.show()
 
