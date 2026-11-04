@@ -38,7 +38,7 @@ from scipy.optimize import minimize
 DEFAULT_DATA_DIR = r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(30-10-2026)_1"
 
 # Default initial guesses for the fit parameters (gamma, theta0). These are used in the
-DEFAULT_GUESS = [1.00694, 0.5] 
+DEFAULT_GUESS = [1.0, 1.0] 
 
 # Physical constants for the wavelength conversion (Eq. 20 of Max's report).
 # These were globals set inside get_wavelength() in the original code.
@@ -313,6 +313,8 @@ def main():
                              "to average (optional: falls back to DEFAULT_DATA_DIR)")
     parser.add_argument("--init_guess", nargs=2, type=float, default=DEFAULT_GUESS,
                         help="Initial guesses for gamma and theta0")
+    parser.add_argument("--calib_data", type=Path, default=None,
+                        help="Path to a CSV file containing calibration data (optional)")
     parser.add_argument("--save", type=Path, default=None,
                         help="Save the final figure to this path (e.g. result.png)")
     parser.add_argument("--no-show", action="store_true",
@@ -341,9 +343,20 @@ def main():
     gamma_opt, theta0_opt, norm_window = fit_gamma_and_theta0(angle, photocurrent_avg, init_guess=args.init_guess)
     print(f"gamma = {gamma_opt:.5f}, theta0 = {theta0_opt:.5f} deg")
 
-    # 4. Apply the calibration and normalise
+    # 4. Apply the calibration and normalise, output the calibrated data to a CSV file
     wavelength_final, photocurrent_normalise = apply_calibration(
         angle, photocurrent_avg, gamma_opt, theta0_opt, norm_window)
+
+    # output the calibrated data to a CSV file
+    if args.calib_data:
+        output_path = args.calib_data
+    
+        output_df = pd.DataFrame({
+            "angle_deg": angle,
+            "wavelength_nm": wavelength_final,
+            "photocurrent_normalised": photocurrent_normalise
+        })
+        output_df.to_csv(output_path, index=False)
 
     # 5. Plot / save
     plot_result(wavelength_final, photocurrent_normalise, gamma_opt, theta0_opt,
