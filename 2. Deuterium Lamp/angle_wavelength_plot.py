@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Get the file
 
-data_file = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(03-11-2026)\Calibration_spectrum\outputted_calib_data\calibration_data_(03-11-2026).txt")
+data_file = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(02_11_2026)\Calibration_spectrum\outputted_calib_data\calibration_spectrum_(02-11-2026).txt")
 save_fig = False
 
 # Load the data and extract the data
@@ -62,6 +62,6 @@ secax = ax.secondary_xaxis('top', functions=(angle_to_wl, wl_to_angle))
 secax.set_xlabel('Wavelength (nm)', fontsize=12, labelpad=10)
 
 if save_fig:
-    fig.savefig("calibration_spectrum_angle_wavelength_(03-11-2026).png", dpi=600, bbox_inches='tight')
+    fig.savefig("calibration_spectrum_angle_wavelength_(02-11-2026).png", dpi=600, bbox_inches='tight')
 
 plt.show()
