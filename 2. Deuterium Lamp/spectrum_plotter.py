@@ -16,13 +16,13 @@ from pathlib import Path
 
 def actuator_angle_to_wavelength(theta_deg):
     # Equation 20 of Max's report: m * lambda = 2 * d * cos(phi) * sin(gamma * (theta - theta0))
-
+    global d, phi, gamma, theta0
     d = 835.5           # nm (1 / 1200 lines/mm)
     phi = 35            # degrees (half deviation angle)
     #gamma = 1.00694     # NEW actuator scaling factor, Max's : 1.0028
     #theta0 = -1.02898   # NEW degrees (angular offset), max's : 1.502
-    gamma = 0.99360 # New New
-    theta0 = 1.01126 # New New degrees
+    gamma = 0.99362 # New New
+    theta0 = 1.01139 # New New degrees
     m = 1               # first diffraction order
 
     theta_rad = np.radians(theta_deg)
@@ -115,7 +115,7 @@ ax1.legend()
 
 ax2.set_xlabel('Wavelength (nm)', fontsize=12)
 ax2.set_ylabel('Photocurrent (A)', fontsize=12)
-ax2.set_title('Spectrum: Eq 20 Calibration', fontsize=14)
+ax2.set_title(f'Spectrum: Eq 20 Calibration ($\\gamma$ = {gamma:.5f}, $\\theta_0$ = {theta0:.5f}°)', fontsize=14)
 #ax2.set_yscale('log')
 ax2.grid(True, alpha=0.3)
 
@@ -124,7 +124,7 @@ ax2.legend()
 plt.tight_layout()
 
 if save_fig:
-    plt.savefig("selected_angles_first_pos_plus_minus_(02-11-2026).png", dpi=600, bbox_inches='tight')
+    plt.savefig(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Figures\(03-11-2026)\spectrum_selected_angles_first_pos_(03-11-2026).png", dpi=600, bbox_inches='tight')
 
 plt.show()
 
