@@ -38,14 +38,16 @@ ax.plot(x1, y, linestyle='-', marker='o', zorder=1)
 
 ax.set_xlabel(r'Angle ($\theta$ in degrees)', fontsize=12)
 ax.set_ylabel('Photocurrent (A)', fontsize=12)
+ax.set_ylim(-5, 105)
 ax.set_title('Deuterium Lamp Calibration Spectrum', fontsize=14, pad=20)
 ax.grid(True, alpha=0.3)
 
 # Mark and label peaks on the plot
 ax.plot(peak_angles, peak_currents, 'rx', markersize=10, zorder=3, label='Peaks')
 for ang, w, c in zip(peak_angles, peak_wls, peak_currents):
-    ax.annotate(f'{w:.1f} nm', xy=(ang, c), xytext=(-10, 0),
+    ax.annotate(f'{w:.1f} nm', xy=(ang, c), xytext=(-10, -10),
                 textcoords='offset points', ha='right', fontsize=9)
+    ax.vlines(ang, ymin=-5, ymax=105, color='red', linestyle='--', zorder=2)
     
 ax.legend()
 
