@@ -5,7 +5,7 @@ from pathlib import Path
 
 # Get the file
 
-data_file = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(02_11_2026)\Calibration_spectrum\outputted_calib_data\calibration_spectrum_(02-11-2026).txt")
+data_file = Path(r"C:\Users\laugh\lea-summer-2026-internship-forked\lea-summer_2026_Internship\2. Deuterium Lamp\Spectrum_calibration_data_(03-11-2026)\Calibration_spectrum\outputted_calib_data\calibration_data_(03-11-2026).txt")
 save_fig = False
 
 # Load the data and extract the data
