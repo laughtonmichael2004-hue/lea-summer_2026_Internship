@@ -1,5 +1,12 @@
 # Deuterium Lamp Spectrum, Calibration, Stability and Resolution Studies
 
+---
+
+## **NOTE:**
+This repo has been forked. This forked repo builds on the previous work related to this project. This forked repo relates to work done during my master's project.
+
+---
+
 This repository contains the analysis code, as well as the data files and result plots for the **VUV (vacuum ultraviolet) monochromator system** equipped with a **deuterium lamp** and **SiPM (silicon photomultiplier)** photodetectors.
 
 The primary goal of this project phase was to reproduce the theoretical spectrum of the lamp, calibrate the angular actuator to physical wavelengths, and characterize the technical boundaries of the system (slit angular resolution and temporal stability).
